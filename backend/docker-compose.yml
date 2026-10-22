@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  sync-backend:
+    build: .
+    container_name: tp6-sync-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
