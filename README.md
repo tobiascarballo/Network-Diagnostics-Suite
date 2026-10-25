@@ -175,14 +175,65 @@ En [syncService.ts](file:///c:/Users/tobic/OneDrive/Documentos/Facu/4to%20A%C3%B
 - Si ejecutas en el **Emulador Android**: Usa `http://10.0.2.2:3000`.
 - Si pruebas en un **dispositivo móvil físico**: Coloca la IP privada de tu PC en la red local (ejemplo: `http://192.168.1.50:3000`).
 
-#### Generar y correr la build de desarrollo:
-```bash
-# Para compilar y ejecutar en Android:
-npx expo run:android
+### 2. Configurar y Ejecutar la App Móvil
 
-# O generar APK local/remoto con EAS CLI:
-npx eas-cli build --profile development --platform android
+La aplicación cuenta con una **capa de abstracción híbrida resiliente**:
+- **En entorno nativo (APK / Development Client):** Opera sobre sockets UDP/TCP reales, libssh2 nativo, GPS satelital y hardware de seguridad Android Keystore.
+- **En entorno de desarrollo / Demostración (Web / Expo):** Activa drivers y servicios simulados coherentes para permitir la navegación completa de la interfaz, el parser ASN.1, la persistencia en WatermelonDB y la sincronización con el backend stub sin requerir hardware físico ni Android Studio.
+
+#### Instalación de dependencias:
+```bash
+cd mobile
+npm install
 ```
+
+#### Ejecutar para demostración (Video Demo):
+```bash
+# Iniciar en modo Web interactivo (óptimo para grabar video en la PC)
+npm run web
+
+# O iniciar con Expo Metro Bundler
+npx expo start
+```
+
+---
+
+### 3. Compilación de APK de Prueba en la Nube (EAS Build)
+Para cumplir con el entregable del **APK** sin necesidad de tener instalado Android Studio ni SDK localmente:
+
+1. Instalar la herramienta de Expo Application Services (si aún no la tienes):
+   ```bash
+   npm install -g eas-cli
+   ```
+2. Iniciar sesión en tu cuenta gratuita de Expo:
+   ```bash
+   eas login
+   ```
+3. Disparar la compilación del APK en los servidores en la nube:
+   ```bash
+   cd mobile
+   eas build -p android --profile preview
+   ```
+*EAS Build compilará el instalador `.apk` de forma remota y al finalizar te entregará un enlace directo de descarga para entregar al profesor.*
+
+---
+
+## 🎬 Guión para la Grabación del Video Demo (3 a 5 min)
+Para cumplir con todos los puntos solicitados por la cátedra:
+
+1. **Terminal Backend:** Mostrar en una terminal el backend stub corriendo (`cd backend && node server.js`) en el puerto 3000.
+2. **Descubrimiento LAN (RF-01):** En la pestaña **Descubrir**, presionar *Escanear Subred Local* o *mDNS / Bonjour*. Mostrar cómo se listan los equipos con su IP, MAC, Hostname y fabricante.
+3. **Consulta SNMP MIB-II (RF-02):** En uno de los equipos detectados, presionar *Consultar SNMP (UDP/161)*. Mostrar la alerta y los datos de telemetría decodificados por el parser BER/ASN.1 (`sysName`, `uptime`, tráfico RX y TX).
+4. **Consola SSH y Keystore (RF-03):** Ir a la pestaña **SSH**. Mostrar la barra de protección Keystore, abrir la configuración de credenciales y ejecutar comandos predefinidos (`uptime`, `show interfaces`). Mostrar la salida en la consola.
+5. **Relevamiento, QR y Evidencia (RF-04 y RF-05):** Ir a la pestaña **Instalar**. 
+   - Presionar el icono de cámara para escanear un QR (o simular selección de ONT Huawei).
+   - Tocar en *Ver Ficha Técnica Remota* para exhibir las especificaciones completas del equipo.
+   - Mostrar las coordenadas GPS satelitales y seleccionar una foto de evidencia de campo.
+6. **Generación de Reporte PDF (RF-06):** Presionar *Generar Reporte PDF y Guardar*. En el modal, tocar *Ver PDF* para mostrar el documento técnico formateado con la foto y los datos georreferenciados.
+7. **Offline-First y Sincronización Outbox (RF-07 y RF-08):** Ir a la pestaña **Historial**.
+   - Mostrar el reporte recién creado en estado `⏳ En Outbox`.
+   - Presionar *Sincronizar* (o verificar el auto-flush).
+   - Mostrar cómo cambia de estado a `✓ Sincronizado` y cómo en la terminal del backend aparecen los logs del reporte recibido con éxito.
 
 ---
 
