@@ -37,22 +37,25 @@ function resolveDeviceMetadata(ip: string, suspectedType: DeviceType): { mac: st
   };
 }
 
+import { Platform } from 'react-native';
+
 /**
  * Prueba la apertura de un socket TCP en una IP y puerto con timeout corto
  */
 function probeSocket(ip: string, port: number, timeoutMs: number = 700): Promise<boolean> {
-  if (!TcpSocket || typeof TcpSocket.createConnection !== 'function') {
-    // Simulación en Expo Go / Web
+  if (Platform.OS === 'web' || !TcpSocket || typeof TcpSocket.createConnection !== 'function') {
+    // Simulación en Expo Go / Web (los navegadores no tienen sockets TCP raw directos)
     return new Promise((resolve) => {
       setTimeout(() => {
         const lastOctet = parseInt(ip.split('.').pop() || '0', 10);
-        // Simular que ciertas IPs comunes responden (gateway .1, servidor .10, switch .15, ont .100)
-        if (lastOctet === 1 && (port === 80 || port === 22)) resolve(true);
+        // Simular que ciertas IPs comunes responden (gateway .1, AP .5, servidor .10, switch .15, ont .100)
+        if (lastOctet === 1 && port === 22) resolve(true);
+        else if (lastOctet === 5 && port === 80) resolve(true);
         else if (lastOctet === 10 && port === 22) resolve(true);
         else if (lastOctet === 15 && port === 161) resolve(true);
         else if (lastOctet === 100 && port === 80) resolve(true);
         else resolve(false);
-      }, 40);
+      }, 20);
     });
   }
 
@@ -102,50 +105,62 @@ export async function scanSubnet(
   const discovered: DiscoveredDevice[] = [];
   const portsToProbe = [80, 22, 161, 8080];
 
+  const scanPromises: Promise<DiscoveredDevice | null>[] = [];
+
   for (let i = startHost; i <= endHost; i++) {
     const targetIp = `${baseSubnet}.${i}`;
-    let isAlive = false;
-    let suspectedType: DeviceType = 'unknown';
+    scanPromises.push(
+      (async () => {
+        let isAlive = false;
+        let suspectedType: DeviceType = 'unknown';
 
-    for (const port of portsToProbe) {
-      const open = await probeSocket(targetIp, port, 300);
-      if (open) {
-        isAlive = true;
-        if (port === 22) suspectedType = 'router';
-        else if (port === 161) suspectedType = 'switch';
-        else suspectedType = 'ont';
-        break;
-      }
-    }
+        for (const port of portsToProbe) {
+          const open = await probeSocket(targetIp, port, 200);
+          if (open) {
+            isAlive = true;
+            if (port === 22) suspectedType = 'router';
+            else if (port === 161) suspectedType = 'switch';
+            else suspectedType = 'ont';
+            break;
+          }
+        }
 
-    if (isAlive) {
-      const meta = resolveDeviceMetadata(targetIp, suspectedType);
-      const device: DiscoveredDevice = {
-        ip: targetIp,
-        mac: meta.mac,
-        hostname: meta.hostname,
-        deviceType: suspectedType,
-        discoveredVia: 'arp_scan',
-        lastSeen: new Date().toISOString(),
-      };
-      discovered.push(device);
+        if (isAlive) {
+          const meta = resolveDeviceMetadata(targetIp, suspectedType);
+          const device: DiscoveredDevice = {
+            ip: targetIp,
+            mac: meta.mac,
+            hostname: meta.hostname,
+            deviceType: suspectedType,
+            discoveredVia: 'arp_scan',
+            lastSeen: new Date().toISOString(),
+          };
 
-      // Persistir en WatermelonDB
-      try {
-        await database.write(async () => {
-          const devicesCol = database.get<Device>('devices');
-          await devicesCol.create((entry) => {
-            entry.ip = device.ip;
-            entry.mac = device.mac;
-            entry.hostname = device.hostname;
-            entry.deviceType = device.deviceType;
-            entry.discoveredVia = device.discoveredVia;
-            entry.lastSeen = new Date();
-          });
-        });
-      } catch (_) {}
-    }
+          // Persistir en WatermelonDB
+          try {
+            await database.write(async () => {
+              const devicesCol = database.get<Device>('devices');
+              await devicesCol.create((entry) => {
+                entry.ip = device.ip;
+                entry.mac = device.mac;
+                entry.hostname = device.hostname;
+                entry.deviceType = device.deviceType;
+                entry.discoveredVia = device.discoveredVia;
+                entry.lastSeen = new Date();
+              });
+            });
+          } catch (_) {}
+
+          return device;
+        }
+        return null;
+      })()
+    );
   }
+
+  const results = await Promise.all(scanPromises);
+  const foundDevices = results.filter((d): d is DiscoveredDevice => d !== null);
+  discovered.push(...foundDevices);
 
   return discovered;
 }

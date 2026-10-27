@@ -16,6 +16,7 @@ import { database } from '../database';
 import Report from '../database/models/Report';
 import { flushOutbox } from '../sync/syncService';
 import { getPendingOutboxItems } from '../sync/outboxQueue';
+import { printOrDownloadHtmlPdf } from '../evidence/pdfReport';
 
 export default function HistoryScreen() {
   const [reports, setReports] = useState<Report[]>([]);
@@ -197,6 +198,30 @@ export default function HistoryScreen() {
               </ScrollView>
             )}
 
+            {selectedReport && (
+              <TouchableOpacity
+                style={styles.downloadPdfBtn}
+                onPress={() => {
+                  printOrDownloadHtmlPdf({
+                    id: selectedReport.id,
+                    technicianName: selectedReport.technicianName,
+                    deviceIp: selectedReport.deviceIp,
+                    deviceMac: selectedReport.deviceMac,
+                    qrCode: selectedReport.qrCode,
+                    latitude: selectedReport.latitude || 0,
+                    longitude: selectedReport.longitude || 0,
+                    notes: selectedReport.notes,
+                    photoUri: selectedReport.photoUri,
+                    createdAt: selectedReport.createdAt?.toISOString?.() || new Date().toISOString(),
+                    synced: selectedReport.isSynced,
+                  });
+                }}
+              >
+                <Feather name="printer" size={15} color="#ffffff" />
+                <Text style={styles.downloadPdfBtnText}>Descargar / Imprimir PDF Oficial</Text>
+              </TouchableOpacity>
+            )}
+
             <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setSelectedReport(null)}>
               <Text style={styles.modalCloseText}>Cerrar</Text>
             </TouchableOpacity>
@@ -280,4 +305,15 @@ const styles = StyleSheet.create({
   pdfFooterText: { color: '#0369a1', fontSize: 10, textAlign: 'center', fontWeight: 'bold' },
   modalCloseBtn: { backgroundColor: '#334155', padding: 10, borderRadius: 6, alignItems: 'center', marginTop: 8 },
   modalCloseText: { color: '#ffffff', fontWeight: 'bold', fontSize: 12 },
+  downloadPdfBtn: {
+    backgroundColor: '#0284c7',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+    borderRadius: 6,
+    gap: 8,
+    marginTop: 10,
+  },
+  downloadPdfBtnText: { color: '#ffffff', fontWeight: 'bold', fontSize: 13 },
 });

@@ -24,22 +24,24 @@ export default function DeviceListScreen() {
 
   const handleScan = async () => {
     setScanning(true);
+    setDevices([]);
     try {
       if (scanMode === 'lan') {
-        const found = await scanSubnet(baseSubnet, 1, 20);
+        const found = await scanSubnet(baseSubnet.trim() || '192.168.1', 1, 20);
         setDevices(found);
         if (found.length === 0) {
           Alert.alert('Escaneo LAN', `No se detectaron equipos activos en el rango ${baseSubnet}.1-20.`);
         }
       } else {
-        const found = await scanMdns(2500);
+        const found = await scanMdns(1500);
         setDevices(found);
         if (found.length === 0) {
           Alert.alert('mDNS / Bonjour', 'No se encontraron servicios anunciados en la red local.');
         }
       }
     } catch (e: any) {
-      Alert.alert('Error', 'Fallo al escanear la red: ' + e.message);
+      console.error('[Scan Error]', e);
+      Alert.alert('Error', 'Fallo al escanear la red: ' + (e?.message || e));
     } finally {
       setScanning(false);
     }

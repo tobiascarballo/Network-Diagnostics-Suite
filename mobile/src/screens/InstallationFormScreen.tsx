@@ -15,6 +15,7 @@ import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { registerInstallation } from '../evidence/installationService';
 import { getFieldLocation } from '../evidence/locationService';
 import { fetchTechnicalSheet } from '../protocols/technicalSheet';
+import { printOrDownloadHtmlPdf } from '../evidence/pdfReport';
 import { DeviceTechnicalSheet, InstallationReport } from '../types';
 
 // Fotos de evidencia predefinidas para demostración técnica de campo
@@ -303,35 +304,46 @@ export default function InstallationFormScreen() {
             </View>
 
             {lastReport && (
-              <ScrollView style={{ marginVertical: 10 }}>
-                <View style={styles.pdfPaper}>
-                  <Text style={styles.pdfPaperHeader}>REPORTE TÉCNICO DE INSTALACIÓN</Text>
-                  <Text style={styles.pdfPaperSub}>Network Diagnostics Suite — DAM 2026</Text>
-                  <View style={styles.pdfDivider} />
+              <>
+                <ScrollView style={{ marginVertical: 10 }}>
+                  <View style={styles.pdfPaper}>
+                    <Text style={styles.pdfPaperHeader}>REPORTE TÉCNICO DE INSTALACIÓN</Text>
+                    <Text style={styles.pdfPaperSub}>Network Diagnostics Suite — DAM 2026</Text>
+                    <View style={styles.pdfDivider} />
 
-                  <Text style={styles.pdfItem}><Text style={styles.bold}>ID Reporte:</Text> {lastReport.id}</Text>
-                  <Text style={styles.pdfItem}><Text style={styles.bold}>Fecha:</Text> {lastReport.createdAt}</Text>
-                  <Text style={styles.pdfItem}><Text style={styles.bold}>Técnico:</Text> {lastReport.technicianName}</Text>
-                  <Text style={styles.pdfItem}><Text style={styles.bold}>Equipo IP:</Text> {lastReport.deviceIp}</Text>
-                  <Text style={styles.pdfItem}><Text style={styles.bold}>Dirección MAC:</Text> {lastReport.deviceMac || '--'}</Text>
-                  <Text style={styles.pdfItem}><Text style={styles.bold}>QR / Serial:</Text> {lastReport.qrCode || '--'}</Text>
-                  <Text style={styles.pdfItem}><Text style={styles.bold}>GPS:</Text> {lastReport.latitude.toFixed(6)}, {lastReport.longitude.toFixed(6)}</Text>
-                  <Text style={styles.pdfItem}><Text style={styles.bold}>Observaciones:</Text> {lastReport.notes}</Text>
+                    <Text style={styles.pdfItem}><Text style={styles.bold}>ID Reporte:</Text> {lastReport.id}</Text>
+                    <Text style={styles.pdfItem}><Text style={styles.bold}>Fecha:</Text> {lastReport.createdAt}</Text>
+                    <Text style={styles.pdfItem}><Text style={styles.bold}>Técnico:</Text> {lastReport.technicianName}</Text>
+                    <Text style={styles.pdfItem}><Text style={styles.bold}>Equipo IP:</Text> {lastReport.deviceIp}</Text>
+                    <Text style={styles.pdfItem}><Text style={styles.bold}>Dirección MAC:</Text> {lastReport.deviceMac || '--'}</Text>
+                    <Text style={styles.pdfItem}><Text style={styles.bold}>QR / Serial:</Text> {lastReport.qrCode || '--'}</Text>
+                    <Text style={styles.pdfItem}><Text style={styles.bold}>GPS:</Text> {lastReport.latitude.toFixed(6)}, {lastReport.longitude.toFixed(6)}</Text>
+                    <Text style={styles.pdfItem}><Text style={styles.bold}>Observaciones:</Text> {lastReport.notes}</Text>
 
-                  {lastReport.photoUri && (
-                    <View style={{ marginTop: 10, alignItems: 'center' }}>
-                      <Text style={[styles.bold, { color: '#0f172a', marginBottom: 4 }]}>Evidencia Fotográfica:</Text>
-                      <Image source={{ uri: lastReport.photoUri }} style={styles.pdfImage} />
+                    {lastReport.photoUri && (
+                      <View style={{ marginTop: 10, alignItems: 'center' }}>
+                        <Text style={[styles.bold, { color: '#0f172a', marginBottom: 4 }]}>Evidencia Fotográfica:</Text>
+                        <Image source={{ uri: lastReport.photoUri }} style={styles.pdfImage} />
+                      </View>
+                    )}
+
+                    <View style={styles.pdfFooter}>
+                      <Text style={styles.pdfFooterText}>
+                        Estado: {lastReport.synced ? 'Sincronizado con Central' : 'Almacenado Offline (Outbox)'}
+                      </Text>
                     </View>
-                  )}
-
-                  <View style={styles.pdfFooter}>
-                    <Text style={styles.pdfFooterText}>
-                      Estado: {lastReport.synced ? 'Sincronizado con Central' : 'Almacenado Offline (Outbox)'}
-                    </Text>
                   </View>
-                </View>
-              </ScrollView>
+                </ScrollView>
+                <TouchableOpacity
+                  style={styles.downloadPdfBtn}
+                  onPress={() => {
+                    printOrDownloadHtmlPdf(lastReport);
+                  }}
+                >
+                  <Feather name="printer" size={15} color="#ffffff" />
+                  <Text style={styles.downloadPdfBtnText}>Descargar / Imprimir PDF Oficial</Text>
+                </TouchableOpacity>
+              </>
             )}
 
             <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowPdfModal(false)}>
@@ -421,4 +433,15 @@ const styles = StyleSheet.create({
   pdfImage: { width: '100%', height: 120, borderRadius: 4, marginTop: 4 },
   pdfFooter: { marginTop: 12, borderTopWidth: 1, borderColor: '#e2e8f0', paddingTop: 6 },
   pdfFooterText: { color: '#0369a1', fontSize: 10, textAlign: 'center', fontWeight: 'bold' },
+  downloadPdfBtn: {
+    backgroundColor: '#0284c7',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+    borderRadius: 6,
+    gap: 8,
+    marginTop: 10,
+  },
+  downloadPdfBtnText: { color: '#ffffff', fontWeight: 'bold', fontSize: 13 },
 });
