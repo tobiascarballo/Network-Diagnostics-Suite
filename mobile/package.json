@@ -2,6 +2,13 @@
   "name": "mobile",
   "version": "1.0.0",
   "main": "index.ts",
+  "expo": {
+    "autolinking": {
+      "exclude": [
+        "react-native-ssh-sftp"
+      ]
+    }
+  },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
     "@nozbe/watermelondb": "^0.28.0",
