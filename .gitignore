@@ -1,6 +1,5 @@
 # Dependencias
 node_modules/
-package-lock.json
 
 # Expo, Metro y Android build
 .expo/
@@ -24,4 +23,6 @@ yarn-debug.log*
 
 # Sistema operativo
 .DS_Store
+Thumbs.db
+
 Thumbs.db

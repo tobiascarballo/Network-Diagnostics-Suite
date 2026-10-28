@@ -1,8 +1,11 @@
 module.exports = {
   dependencies: {
-    'react-native-ssh-sftp': {
+    'react-native-keychain': {
       platforms: {
-        android: null, // Desactiva la compilación nativa de este módulo obsoleto (2017) que rompe Gradle 9
+        android: {
+          // Alinea el nombre de librería de autolinking con el codegenConfig de package.json ("RNKeychainSpec")
+          libraryName: 'RNKeychainSpec',
+        },
       },
     },
   },
